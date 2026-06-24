@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo-api
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/simonangel-fong/k8s-multi-cloud.git
+    targetRevision: master
+    path: helm/multicloud-demo-api
+    helm:
+      valuesObject:
+        httpRoute:
+          enabled: true
+          gatewayName: eg
+          gatewayNamespace: envoy-gateway-system
+          hostname: cloud.arguswatcher.net
+          path: /api/
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: demo-api
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
