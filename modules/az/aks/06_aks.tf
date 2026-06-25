@@ -25,12 +25,12 @@ resource "azurerm_kubernetes_cluster" "this" {
   # ####################
   default_node_pool {
     name                 = "system"
+    vnet_subnet_id       = azurerm_subnet.this.id
     vm_size              = var.default_node_pool.vm_size
     node_count           = var.default_node_pool.node_count
     auto_scaling_enabled = var.default_node_pool.auto_scaling
     min_count            = var.default_node_pool.auto_scaling ? var.default_node_pool.min_count : null
     max_count            = var.default_node_pool.auto_scaling ? var.default_node_pool.max_count : null
-    vnet_subnet_id       = azurerm_subnet.this.id
   }
 
   # ####################

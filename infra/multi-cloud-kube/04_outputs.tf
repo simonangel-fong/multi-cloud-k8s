@@ -3,9 +3,14 @@
 # ##############################
 # Kubeconfig
 # ##############################
-output "kubeconfig_command" {
-  description = "Run this to update your local kubeconfig"
+output "kubeconfig_eks" {
+  description = "Update local kubeconfig with EKS"
   value       = "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}"
+}
+
+output "kubeconfig_aks" {
+  description = "Update local kubeconfig with AKS"
+  value       = "az aks get-credentials --resource-group ${module.eks.cluster_name} --name ${module.eks.cluster_name} --overwrite-existing"
 }
 
 # ##############################

@@ -13,7 +13,7 @@ resource "azurerm_resource_group" "main" {
 # AKS
 # ##############################
 module "aks" {
-  source = "../modules/az/aks"
+  source = "../../modules/az/aks"
 
   # ####################
   # Resource Group
@@ -31,4 +31,11 @@ module "aks" {
   # AKS
   # ####################
   cluster_version = local.cluster_version
+  default_node_pool = {
+    vm_size      = "standard_dc2s_v3"
+    node_count   = 1
+    min_count    = 1
+    max_count    = 3
+    auto_scaling = true
+  }
 }

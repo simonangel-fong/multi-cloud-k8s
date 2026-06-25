@@ -4,7 +4,7 @@
 # VPC
 # ##############################
 module "vpc" {
-  source = "../modules/aws/vpc"
+  source = "../../modules/aws/vpc"
 
   vpc_name = local.common_name
   vpc_cidr = local.vpc_cidr
@@ -15,7 +15,7 @@ module "vpc" {
 # EKS
 # ##############################
 module "eks" {
-  source = "../modules/aws/eks"
+  source = "../../modules/aws/eks"
 
   cluster_name    = local.common_name
   cluster_version = local.cluster_version
@@ -27,7 +27,7 @@ module "eks" {
 # EKS Node Group: default
 # ##############################
 module "eks_node_group_default" {
-  source = "../modules/aws/eks-node-group"
+  source = "../../modules/aws/eks-node-group"
 
   cluster_name    = module.eks.cluster_name
   node_group_name = "default"
@@ -47,7 +47,7 @@ module "eks_node_group_default" {
 # Argo CD
 # ##############################
 module "argocd" {
-  source = "../modules/aws/argocd"
+  source = "../../modules/aws/argocd"
 
   argocd_version = "9.7.0"
 
