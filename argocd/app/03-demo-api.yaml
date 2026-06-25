@@ -32,6 +32,12 @@ spec:
       destination:
         server: '{{ .server }}'
         namespace: demo-api
+      ignoreDifferences:
+        - group: gateway.networking.k8s.io
+          kind: HTTPRoute
+          jsonPointers:
+            - /spec/rules
+            - /spec/parentRefs
       syncPolicy:
         automated:
           prune: true
@@ -45,3 +51,4 @@ spec:
         syncOptions:
           - CreateNamespace=true
           - ServerSideApply=true
+          - RespectIgnoreDifferences=true
