@@ -166,7 +166,6 @@ use_lockfile = true
 encrypt      = true
 ```
 
-
 ```sh
 TF_VAR_cf_api_token=
 curl -H "Authorization: Bearer $TF_VAR_cf_api_token" "https://api.cloudflare.com/client/v4/user/tokens/verify"
@@ -178,6 +177,18 @@ curl -s -H "Authorization: Bearer $TF_VAR_cf_api_token" https://api.cloudflare.c
 curl -s -H "Authorization: Bearer $TF_VAR_cf_api_token" https://api.cloudflare.com/client/v4/accounts/<account_id>/load_balancers/monitors
 
 # confirm dns zone
+curl -s -H "Authorization: Bearer $TF_VAR_cf_api_token" "https://api.cloudflare.com/client/v4/zones?name=arguswatcher.net"
+```
+
+```sh
+# Both pools should report healthy origins
 curl -s -H "Authorization: Bearer $TF_VAR_cf_api_token" \
-  "https://api.cloudflare.com/client/v4/zones?name=arguswatcher.net"
+  "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/load_balancers/pools/$(terraform -chdir=infra/cf-lb output -raw cf_pool_aws_id)/health"
+
+curl -s -H "Authorization: Bearer $TF_VAR_cf_api_token" \
+  "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/load_balancers/pools/$(terraform -chdir=infra/cf-lb output -raw cf_pool_azure_id)/health"
+
+
+curl -v -H "Host: cloud.arguswatcher.net" "http://20.200.88.217/api/"
+curl -v -H "Host: cloud.arguswatcher.net" "http://a4e79dabf1d6b41919543e2410b20307-31536122.ca-central-1.elb.amazonaws.com/api/"
 ```

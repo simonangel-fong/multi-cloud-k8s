@@ -12,3 +12,13 @@ output "cf_monitor_id" {
   description = "Cloudflare LB monitor id"
   value       = cloudflare_load_balancer_monitor.http.id
 }
+
+output "cf_pool_aws_id" {
+  description = "Cloudflare LB pool id (AWS/EKS)"
+  value       = cloudflare_load_balancer_pool.aws.id
+}
+
+output "cf_pool_azure_id" {
+  description = "Cloudflare LB pool id (Azure/AKS)"
+  value       = cloudflare_load_balancer_pool.azure.id
+}

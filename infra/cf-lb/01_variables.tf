@@ -36,3 +36,15 @@ variable "hostname" {
   type    = string
   default = "cloud"
 }
+
+# ##############################
+# Origins
+# ##############################
+variable "aws_origin_address" {
+  description = "EKS Envoy Gateway ELB hostname"
+  type        = string
+}
+variable "azure_origin_address" {
+  description = "AKS Envoy Gateway LB IP"
+  type        = string
+}

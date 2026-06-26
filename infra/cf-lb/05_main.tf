@@ -30,3 +30,34 @@ resource "cloudflare_load_balancer_monitor" "http" {
     Host = [local.fqdn]
   }
 }
+
+# ##############################
+# Origin pools
+# ##############################
+resource "cloudflare_load_balancer_pool" "aws" {
+  account_id = var.cf_account_id
+  name       = "${local.common_name}-aws"
+  enabled    = true
+  monitor    = cloudflare_load_balancer_monitor.http.id
+
+  origins = [{
+    name    = "eks-envoy-gateway"
+    address = var.aws_origin_address
+    enabled = true
+    weight  = 1
+  }]
+}
+
+resource "cloudflare_load_balancer_pool" "azure" {
+  account_id = var.cf_account_id
+  name       = "${local.common_name}-azure"
+  enabled    = true
+  monitor    = cloudflare_load_balancer_monitor.http.id
+
+  origins = [{
+    name    = "aks-envoy-gateway"
+    address = var.azure_origin_address
+    enabled = true
+    weight  = 1
+  }]
+}
