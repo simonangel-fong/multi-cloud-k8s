@@ -1,136 +1,57 @@
-# apiVersion: argoproj.io/v1alpha1
-# kind: ApplicationSet
-# metadata:
-#   name: grafana-k8s-monitoring
-#   namespace: argocd
-# spec:
-#   goTemplate: true
-#   goTemplateOptions:
-#     - missingkey=error
-#   generators:
-#     - clusters:
-#         selector:
-#           matchLabels:
-#             workload: demo-api
-#   template:
-#     metadata:
-#       name: '{{ .name }}-04-grafana-k8s-monitoring'
-#       annotations:
-#         argocd.argoproj.io/sync-wave: "3"
-#       finalizers:
-#         - resources-finalizer.argoproj.io/finalizer
-#     spec:
-#       project: default
-#       revisionHistoryLimit: 3
-#       source:
-#         repoURL: https://grafana.github.io/helm-charts
-#         chart: k8s-monitoring
-#         targetRevision: ^4
-#         helm:
-#           releaseName: grafana-k8s-monitoring
-#           valuesObject:
-#             cluster:
-#               name: '{{ .name }}'
-#             destinations:
-#               grafana-cloud-metrics:
-#                 type: prometheus
-#                 urlFrom: sys.env("PROM_URL")
-#                 auth:
-#                   type: basic
-#                   usernameKey: prom_username
-#                   passwordKey: prom_password
-#                 secret:
-#                   create: false
-#                   name: grafana-cloud
-#                   namespace: monitoring
-#               grafana-cloud-logs:
-#                 type: loki
-#                 urlFrom: sys.env("LOGS_URL")
-#                 auth:
-#                   type: basic
-#                   usernameKey: logs_username
-#                   passwordKey: logs_password
-#                 secret:
-#                   create: false
-#                   name: grafana-cloud
-#                   namespace: monitoring
-#             clusterMetrics:
-#               enabled: true
-#               collector: alloy-metrics
-#             hostMetrics:
-#               enabled: true
-#               collector: alloy-metrics
-#               linuxHosts:
-#                 enabled: true
-#               windowsHosts:
-#                 enabled: true
-#               energyMetrics:
-#                 enabled: true
-#             clusterEvents:
-#               enabled: true
-#               collector: alloy-singleton
-#             podLogsViaLoki:
-#               enabled: true
-#               collector: alloy-logs
-#             collectors:
-#               alloy-metrics:
-#                 presets:
-#                   - clustered
-#                   - statefulset
-#               alloy-singleton:
-#                 presets:
-#                   - singleton
-#               alloy-logs:
-#                 presets:
-#                   - filesystem-log-reader
-#                   - daemonset
-#             collectorCommon:
-#               alloy:
-#                 envFrom:
-#                   - secretRef:
-#                       name: grafana-cloud
-#                 remoteConfig:
-#                   enabled: true
-#                   urlFrom: sys.env("FLEET_URL")
-#                   auth:
-#                     type: basic
-#                     usernameKey: fleet_username
-#                     passwordKey: fleet_password
-#                   secret:
-#                     create: false
-#                     name: grafana-cloud
-#                     namespace: monitoring
-#             telemetryServices:
-#               kube-state-metrics:
-#                 deploy: true
-#               node-exporter:
-#                 deploy: true
-#               windows-exporter:
-#                 deploy: true
-#               kepler:
-#                 deploy: true
-#               # opencost requires a literal Prometheus URL (no urlFrom support).
-#               # Re-enable once URL is sourced from Terraform-rendered ConfigMap or ESO.
-#               opencost:
-#                 deploy: false
-#       destination:
-#         server: '{{ .server }}'
-#         namespace: monitoring
-#       ignoreDifferences:
-#         - group: apps
-#           kind: DaemonSet
-#           jsonPointers:
-#             - /spec/template/metadata/annotations
-#       syncPolicy:
-#         automated:
-#           prune: true
-#           selfHeal: true
-#         retry:
-#           limit: 5
-#           backoff:
-#             duration: 5s
-#             maxDuration: 3m
-#             factor: 2
-#         syncOptions:
-#           - CreateNamespace=true
-#           - ServerSideApply=true
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: grafana-k8s-monitoring
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions:
+    - missingkey=error
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            workload: demo-api
+  template:
+    metadata:
+      name: '{{ .name }}-04-grafana-k8s-monitoring'
+      annotations:
+        argocd.argoproj.io/sync-wave: "3"
+      finalizers:
+        - resources-finalizer.argoproj.io/finalizer
+    spec:
+      project: default
+      revisionHistoryLimit: 3
+      sources:
+        - repoURL: https://grafana.github.io/helm-charts
+          chart: k8s-monitoring
+          targetRevision: 4.1.6
+          helm:
+            releaseName: grafana-k8s-monitoring
+            valueFiles:
+              - $values/helm/k8s-monitoring/values-{{ index .metadata.labels "cloud" }}.yaml
+        - repoURL: https://github.com/simonangel-fong/k8s-multi-cloud.git
+          targetRevision: master
+          ref: values
+      destination:
+        server: '{{ .server }}'
+        namespace: monitoring
+      ignoreDifferences:
+        - group: apps
+          kind: DaemonSet
+          jsonPointers:
+            - /spec/template/metadata/annotations
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            maxDuration: 3m
+            factor: 2
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+          - RespectIgnoreDifferences=true
