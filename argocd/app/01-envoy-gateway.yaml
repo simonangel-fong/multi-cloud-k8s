@@ -20,7 +20,7 @@ spec:
       finalizers:
         - resources-finalizer.argoproj.io/finalizer
     spec:
-      project: platform-system
+      project: default
       revisionHistoryLimit: 3
       source:
         repoURL: registry-1.docker.io/envoyproxy

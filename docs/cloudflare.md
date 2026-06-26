@@ -11,7 +11,7 @@ Use Cloudflare Load Balancing to front the EKS and AKS Envoy Gateway public LBs 
 ## Repo Layout
 
 ```
-infra/cf-lb/
+infra/cloudflare/
   01_variables.tf   # project_name, env, zone, hostname, origin endpoints
   02_locals.tf      # common_name, naming
   03_providers.tf   # cloudflare provider + s3 backend
@@ -20,7 +20,7 @@ infra/cf-lb/
   backend.hcl       # shared bucket; key=multi-cloud-k8s/cloudflare/terraform.tfstate
 ```
 
-> Origin endpoints (EKS ELB hostname, AKS LB IP) come from the Envoy Gateway `gateway.status.addresses[0].value` in each cluster â€” see [argocd.md](argocd.md). Wired into `cf-lb` via `tfvars` for now; promote to cross-stack `terraform_remote_state` once stable.
+> Origin endpoints (EKS ELB hostname, AKS LB IP) come from the Envoy Gateway `gateway.status.addresses[0].value` in each cluster â€” see [argocd.md](argocd.md). Wired into `cloudflare` via `tfvars` for now; promote to cross-stack `terraform_remote_state` once stable.
 
 ## Resources
 
@@ -45,7 +45,7 @@ Edge-terminated by Cloudflare (proxied = `true`). Origins stay HTTP on port 80 â
 - Single public hostname for both clouds
 - Active/active with health-based failover
 - TLS terminated at Cloudflare edge
-- All resources declarative in `infra/cf-lb`, state in the same S3 bucket as `multi-cloud-kube`
+- All resources declarative in `infra/cloudflare`, state in the same S3 bucket as `multi-cloud-kube`
 
 ---
 
@@ -53,7 +53,7 @@ Edge-terminated by Cloudflare (proxied = `true`). Origins stay HTTP on port 80 â
 
 | #   | Goal                       | Done when                                                                                                                                  |
 | --- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| 00  | Scaffold + backend         | `terraform -chdir=infra/cf-lb init -backend-config=backend.hcl` succeeds; state object at `multi-cloud-k8s/cloudflare/terraform.tfstate`   |
+| 00  | Scaffold + backend         | `terraform -chdir=infra/cloudflare init -backend-config=backend.hcl` succeeds; state object at `multi-cloud-k8s/cloudflare/terraform.tfstate`   |
 | 01  | Provider + zone wiring     | `cloudflare` provider authenticated via `CLOUDFLARE_API_TOKEN`; `data "cloudflare_zone"` for `arguswatcher.net` returns a zone id          |
 | 02  | Health monitor             | Monitor created; `cloudflare_load_balancer_monitor` shows healthy probes against both origins                                              |
 | 03  | Origin pools (AWS + Azure) | Both pools `healthy` in CF dashboard; origins resolve to current Envoy Gateway LB endpoints                                                |
@@ -76,7 +76,7 @@ Edge-terminated by Cloudflare (proxied = `true`). Origins stay HTTP on port 80 â
 
 ### Inputs
 
-Set in `infra/cf-lb/terraform.tfvars`:
+Set in `infra/cloudflare/terraform.tfvars`:
 
 ```hcl
 env                  = "dev"
@@ -108,12 +108,12 @@ kubectl get gateway eg -n envoy-gateway-system -o jsonpath='{.status.addresses[0
 ### Provision
 
 ```sh
-terraform -chdir=infra/cf-lb init -backend-config=backend.hcl -reconfigure
-terraform -chdir=infra/cf-lb fmt && terraform -chdir=infra/cf-lb validate
-terraform -chdir=infra/cf-lb plan
-terraform -chdir=infra/cf-lb apply -auto-approve
+terraform -chdir=infra/cloudflare init -backend-config=backend.hcl -reconfigure
+terraform -chdir=infra/cloudflare fmt && terraform -chdir=infra/cloudflare validate
+terraform -chdir=infra/cloudflare plan
+terraform -chdir=infra/cloudflare apply -auto-approve
 
-terraform -chdir=infra/cf-lb destroy -auto-approve
+terraform -chdir=infra/cloudflare destroy -auto-approve
 ```
 
 ### Verify
@@ -165,7 +165,7 @@ kubectl -n envoy-gateway-system scale deploy envoy-envoy-gateway-system-eg-<hash
 Shared S3 bucket with `multi-cloud-kube`; distinct key:
 
 ```hcl
-# infra/cf-lb/backend.hcl
+# infra/cloudflare/backend.hcl
 bucket       = "<same bucket as multi-cloud-kube>"
 key          = "multi-cloud-k8s/cloudflare/terraform.tfstate"
 region       = "<same region>"
@@ -190,10 +190,10 @@ curl -s -H "Authorization: Bearer $TF_VAR_cf_api_token" "https://api.cloudflare.
 ```sh
 # Both pools should report healthy origins
 curl -s -H "Authorization: Bearer $TF_VAR_cf_api_token" \
-  "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/load_balancers/pools/$(terraform -chdir=infra/cf-lb output -raw cf_pool_aws_id)/health"
+  "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/load_balancers/pools/$(terraform -chdir=infra/cloudflare output -raw cf_pool_aws_id)/health"
 
 curl -s -H "Authorization: Bearer $TF_VAR_cf_api_token" \
-  "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/load_balancers/pools/$(terraform -chdir=infra/cf-lb output -raw cf_pool_azure_id)/health"
+  "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/load_balancers/pools/$(terraform -chdir=infra/cloudflare output -raw cf_pool_azure_id)/health"
 
 
 curl -v -H "Host: cloud.arguswatcher.net" "http://20.200.88.217/api/"

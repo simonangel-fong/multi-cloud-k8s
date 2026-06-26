@@ -20,7 +20,7 @@ spec:
       finalizers:
         - resources-finalizer.argoproj.io/finalizer
     spec:
-      project: tenant-demo
+      project: default
       revisionHistoryLimit: 3
       source:
         repoURL: https://github.com/simonangel-fong/k8s-multi-cloud.git
